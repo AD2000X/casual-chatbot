@@ -388,3 +388,153 @@ test_labels = label_encoder.transform(test_df['intent'])
 print("String Label : Numeric Label")
 for i, label in enumerate(label_encoder.classes_):
     print(f"{label} : {i}")
+
+
+# Define Evaluation Metrics
+# evaluation
+def evaluate_model(true_labels, predictions):
+    acc = accuracy_score(true_labels, predictions)
+    f1 = f1_score(true_labels, predictions, average='weighted')
+    precision = precision_score(true_labels, predictions, average='weighted')
+    recall = recall_score(true_labels, predictions, average='weighted')
+    conf_matrix = confusion_matrix(true_labels, predictions)
+    
+    print(f"Accuracy: {acc:.4f}")
+    print(f"F1 Score (Weighted): {f1:.4f}")
+    print(f"Precision (Weighted): {precision:.4f}")
+    print(f"Recall (Weighted): {recall:.4f}")
+    print(f"Confusion Matrix:\n{conf_matrix}")
+    
+    return acc, f1, precision, recall, conf_matrix
+# SVM (Support vector machine)
+# define parameter grid
+param_grid = {
+    'C': [0.1, 1, 10],  # regularization parameters
+    'gamma': ['scale', 'auto'],  # kernel function coefficients
+    'kernel': ['rbf', 'linear']  # kernel type used
+}
+
+# create an SVM model instance
+svm = SVC(random_state=42)
+
+# create GridSearchCV instance
+grid_search = GridSearchCV(estimator=svm, param_grid=param_grid, 
+                           cv=5, n_jobs=-1, verbose=2, scoring='accuracy')
+
+# grid search and cross-validation
+grid_search.fit(train_input_embeddings, train_labels)
+
+print("Best parameters found: ", grid_search.best_params_)
+
+# best parameters to make predictions on the validation set
+val_predictions = grid_search.predict(val_input_embeddings)
+
+# evaluate the model
+print("\nSVM evaluation:")
+evaluate_model(val_labels, val_predictions)
+
+# performance report
+print("\nBest model classification report:")
+print(classification_report(val_labels, val_predictions))
+
+# Random Forest
+param_grid_rf = {
+    'n_estimators': [100, 200, 300],  # number of trees
+    'max_depth': [10, 20, 30],        # maximum depth of tree
+    'min_samples_split': [2, 5, 10]   # minimum number of samples required to cut internal nodes
+}
+
+rf = RandomForestClassifier(random_state=42)
+
+grid_search_rf = GridSearchCV(estimator=rf, param_grid=param_grid_rf, 
+                              cv=5, n_jobs=-1, verbose=2, scoring='accuracy')
+
+grid_search_rf.fit(train_input_embeddings, train_labels)
+
+print("Best parameters found for Random Forest: ", grid_search_rf.best_params_)
+
+val_predictions_rf = grid_search_rf.predict(val_input_embeddings)
+
+print("\nRandom Forest model evaluation:")
+evaluate_model(val_labels, val_predictions_rf)
+
+print("\nBest Random Forest model classification report:")
+print(classification_report(val_labels, val_predictions_rf))
+
+# Gradient Boosting
+param_grid_gb = {
+    'n_estimators': [50, 100, 150],
+    'learning_rate': [0.05, 0.1],  # learning rate
+    'max_depth': [3, 4],
+    'min_samples_split': [2, 4]
+}
+
+
+gb = GradientBoostingClassifier(random_state=42)
+
+grid_search_gb = GridSearchCV(estimator=gb, param_grid=param_grid_gb, 
+                              cv=3, n_jobs=-1, verbose=2, scoring='accuracy')
+
+grid_search_gb.fit(train_input_embeddings, train_labels)
+
+print("Best parameters found for Gradient Boosting: ", grid_search_gb.best_params_)
+
+val_predictions_gb = grid_search_gb.predict(val_input_embeddings)
+
+print("\nGradient Boosting Decision Tree model evaluation:")
+evaluate_model(val_labels, val_predictions_gb)
+
+print("\nBest Gradient Boosting model classification report:")
+print(classification_report(val_labels, val_predictions_gb))
+
+# Logistic Regression
+param_grid_lr = {
+    'C': [0.001, 0.01, 0.1, 1, 10, 100],  # regularization strength
+    'solver': ['newton-cg', 'lbfgs', 'liblinear', 'sag', 'saga']  # optimization
+}
+
+lr = LogisticRegression(random_state=42, max_iter=1000)
+
+grid_search_lr = GridSearchCV(estimator=lr, param_grid=param_grid_lr, 
+                              cv=5, n_jobs=-1, verbose=2, scoring='accuracy')
+
+grid_search_lr.fit(train_input_embeddings, train_labels)
+
+print("Best parameters found for Logistic Regression: ", grid_search_lr.best_params_)
+
+val_predictions_lr = grid_search_lr.predict(val_input_embeddings)
+
+print("\nLogistic Regression model evaluation:")
+evaluate_model(val_labels, val_predictions_lr)
+
+print("\nBest Logistic Regression model classification report:")
+print(classification_report(val_labels, val_predictions_lr))
+
+# Evaluate the best model on Test Set
+best_lr_model = grid_search_lr.best_estimator_
+
+# predictions on the test set
+test_predictions_lr = best_lr_model.predict(test_input_embeddings)
+
+# evaluate the performance of a logistic regression model on test set
+print("\nLogistic Regression model test evaluation:")
+test_accuracy, test_f1, test_precision, test_recall, test_conf_matrix = evaluate_model(test_labels, test_predictions_lr)
+
+print("\nLogistic Regression model test classification report:")
+print(classification_report(test_labels, test_predictions_lr))
+
+# Inspect wrong indices
+incorrect_indices = np.where(val_predictions_lr != val_labels)[0]
+# check instances
+for index in incorrect_indices[:]:
+    print(f"Predicted: {label_encoder.inverse_transform([val_predictions_lr[index]])[0]}, Actual: {label_encoder.inverse_transform([val_labels[index]])[0]}")
+
+
+# Save the best model: Logistics Regression
+# model save path
+model_save_path = "C:/Users/chang/best_logistic_regression_model.joblib"
+
+# save the model
+joblib.dump(best_lr_model, model_save_path)
+
+print(f"Model saved to {model_save_path}")
