@@ -406,6 +406,7 @@ def evaluate_model(true_labels, predictions):
     print(f"Confusion Matrix:\n{conf_matrix}")
     
     return acc, f1, precision, recall, conf_matrix
+
 # SVM (Support vector machine)
 # define parameter grid
 param_grid = {
@@ -600,3 +601,30 @@ button.on_click(on_button_clicked)
 display(text, button, output)
 
 
+# Future Work
+# app = Flask(__name__)
+
+# # load model
+# model = joblib.load("best_logistic_regression_model.joblib.joblib")
+
+# @app.route('/chat', methods=['POST'])
+# def chat():
+#     user_message = request.json.get("message")
+#     # preprocess inputs
+#     cleaned_message = preprocess_message(user_message)
+
+#     # the model has a predict method and only requires a processed string as input
+#     response = model.predict([cleaned_message])[0]  # get the first element returned by predict
+
+#     return jsonify({'response': response})
+
+# def preprocess_message(message):
+#     # same text preprocessing method as before
+#     message = message.lower()
+#     message = re.sub(r'\d+', '', message)
+#     message = re.sub(r'[^\w\s]', '', message)
+#     message = re.sub(r'\_', '', message)
+#     return message
+
+# if __name__ == '__main__':
+#     app.run(debug=True)
