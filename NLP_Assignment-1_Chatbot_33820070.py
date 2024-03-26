@@ -274,3 +274,117 @@ axs[1].tick_params(axis='x', rotation=45)
 
 plt.tight_layout()
 plt.show()
+
+
+# Split dataset to taining, validation, and test set
+# visualize stratified sampling results
+train_df, temp_df = train_test_split(dialogs_df, test_size=0.4, random_state=42, stratify=dialogs_df['intent'])
+val_df, test_df = train_test_split(temp_df, test_size=0.5, random_state=42, stratify=temp_df['intent'])
+
+fig, axs = plt.subplots(1, 3, figsize=(18, 5))
+sns.countplot(x='intent', data=train_df, ax=axs[0], order=dialogs_df['intent'].value_counts().index)
+axs[0].set_title('Training Set')
+sns.countplot(x='intent', data=val_df, ax=axs[1], order=dialogs_df['intent'].value_counts().index)
+axs[1].set_title('Validation Set')
+sns.countplot(x='intent', data=test_df, ax=axs[2], order=dialogs_df['intent'].value_counts().index)
+axs[2].set_title('Test Set')
+for ax in axs:
+    ax.tick_params(axis='x', rotation=90)
+plt.tight_layout()
+
+# print the sizes of the datasets
+print(f"Training Set Size: {len(train_df)}")
+print(f"Validation Set Size: {len(val_df)}")
+print(f"Test Set Size: {len(test_df)}")
+
+plt.show()
+
+# RNN based: ELMo(Embeddings from Language Model)
+# load ELMo model
+elmo = hub.Module("https://tfhub.dev/google/elmo/3", trainable=True)
+
+# define function to batch process text and return word embedding
+def elmo_vectors(x):
+    embeddings = []
+    with tf.Session() as session:
+        session.run(tf.global_variables_initializer())
+        session.run(tf.tables_initializer())
+        # batch
+        for i in range(0, len(x), 100):
+            batch = x[i:i+100]
+            embeddings.append(session.run(tf.reduce_mean(elmo(batch.tolist(), signature="default", as_dict=True)["elmo"], 1)))
+    return np.concatenate(embeddings, axis=0)
+
+# training set
+train_input_embeddings = elmo_vectors(train_df['input_cleaned'])
+train_output_embeddings = elmo_vectors(train_df['output_cleaned'])
+
+# validation set
+val_input_embeddings = elmo_vectors(val_df['input_cleaned'])
+val_output_embeddings = elmo_vectors(val_df['output_cleaned'])
+
+# test set
+test_input_embeddings = elmo_vectors(test_df['input_cleaned'])
+test_output_embeddings = elmo_vectors(test_df['output_cleaned'])
+
+# PCA(Principal Component Analysis)
+# initialise PCA to 2D dimension
+pca = PCA(n_components=2)
+
+# PCA transform on input embedding
+train_input_pca = pca.fit_transform(train_input_embeddings)
+val_input_pca = pca.fit_transform(val_input_embeddings)
+test_input_pca = pca.fit_transform(test_input_embeddings)
+
+# Plot the function of the PCA results and add text labels for the first 10 points
+def plot_pca_with_annotations(data_pca, texts, title):
+    plt.figure(figsize=(10, 7))
+    plt.scatter(data_pca[:, 0], data_pca[:, 1], edgecolor='k', alpha=0.5)
+    for i, text in enumerate(texts[:10]):
+        plt.annotate(text, (data_pca[i, 0], data_pca[i, 1]))
+    plt.xlabel('Principal Component 1')
+    plt.ylabel('Principal Component 2')
+    plt.title(title)
+    plt.show()
+
+# draw annotated PCA plots
+plot_pca_with_annotations(train_input_pca, train_df['input_cleaned'].tolist(), 'PCA of Train Input Embeddings')
+plot_pca_with_annotations(val_input_pca, val_df['input_cleaned'].tolist(), 'PCA of Validation Input Embeddings')
+plot_pca_with_annotations(test_input_pca, test_df['input_cleaned'].tolist(), 'PCA of Test Input Embeddings')
+
+# t-SNE
+# function to perform t-SNE and plot
+def plot_tsne(embeddings, labels, title):
+    # initialise t-SNE
+    tsne = TSNE(n_components=2, random_state=42, n_iter=300, perplexity=30)
+    
+    # t-SNE dimensionality reduction
+    tsne_results = tsne.fit_transform(embeddings)
+    
+    # plot
+    plt.figure(figsize=(12,8))
+    plt.scatter(tsne_results[:, 0], tsne_results[:, 1], c='blue', alpha=0.5)
+    plt.title(title)
+    plt.xlabel('t-SNE feature 1')
+    plt.ylabel('t-SNE feature 2')
+    plt.show()
+
+# draw annotated PCA plots
+plot_tsne(train_input_embeddings, train_df['intent'], 't-SNE of Train Input Embeddings')
+plot_tsne(val_input_embeddings, val_df['intent'], 't-SNE of Validation Input Embeddings')
+plot_tsne(test_input_embeddings, test_df['intent'], 't-SNE of Test Input Embeddings')
+
+# Feature Engineering: Encode Label (intents) for Chatbot prediction
+
+# initialise LabelEncoder
+label_encoder = LabelEncoder()
+
+# convert labels
+train_labels = label_encoder.fit_transform(train_df['intent'])
+val_labels = label_encoder.transform(val_df['intent'])
+test_labels = label_encoder.transform(test_df['intent'])
+
+# original labels and corresponding value labels
+print("String Label : Numeric Label")
+for i, label in enumerate(label_encoder.classes_):
+    print(f"{label} : {i}")
