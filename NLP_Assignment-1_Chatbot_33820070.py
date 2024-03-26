@@ -538,3 +538,65 @@ model_save_path = "C:/Users/chang/best_logistic_regression_model.joblib"
 joblib.dump(best_lr_model, model_save_path)
 
 print(f"Model saved to {model_save_path}")
+
+
+# Implement Chatbot in a Jupyter Notebook file
+# Load our trained Logistic Regression model and LabelEncoder
+model_path = 'C:/Users/chang/best_logistic_regression_model.joblib'
+label_encoder_path = 'C:/Users/chang/path_to_label_encoder.joblib'
+
+# load the ELMo model
+elmo = hub.Module("https://tfhub.dev/google/elmo/3", trainable=True)
+
+# define function to process input text and return embeddings
+def elmo_vectors(x):
+    embeddings = []
+    with tf.Session() as session:
+        session.run(tf.global_variables_initializer())
+        session.run(tf.tables_initializer())
+        # process the text input to generate embeddings
+        embeddings = session.run(tf.reduce_mean(elmo([x], signature="default", as_dict=True)["elmo"], 1))
+    return embeddings
+
+# clean the input text
+def clean_text(text):
+    text = text.lower()
+    text = re.sub(r'\d+', '', text)
+    text = re.sub(r'[^\w\s]', '', text)
+    text = re.sub(r'\_', '', text)
+    return text
+
+# interactive chat function
+def chat_with_bot(user_input):
+    cleaned_input = clean_text(user_input)
+    input_embedding = elmo_vectors(cleaned_input)
+    prediction = model.predict(input_embedding)
+    predicted_intent = label_encoder.inverse_transform(prediction)[0]  # Use the 'label_encoder' loaded before
+    return "Predicted Intent: " + predicted_intent
+
+# create text input widget
+text = widgets.Text(
+    value='',
+    placeholder='Type something',
+    description='You:',
+    disabled=False
+)
+
+# create a input button
+button = widgets.Button(description="Send")
+
+# output widget to display the response from the bot
+output = widgets.Output()
+
+def on_button_clicked(b):
+    with output:
+        output.clear_output()
+        response = chat_with_bot(text.value)
+        print("Bot:", response)
+
+button.on_click(on_button_clicked)
+
+# display the widgets
+display(text, button, output)
+
+
