@@ -29,8 +29,8 @@ from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
 import joblib
 
-# deploy chatter bot
-from flask import Flask, request, jsonify
+# # deploy chatter bot
+# from flask import Flask, request, jsonify
 
 
 # EDA (Exploratory Data Analysis)
