@@ -24,48 +24,54 @@ The project is structured as a single Python file (`chatbot.py`), which includes
 
 ## Dependencies
 All required packages are listed in `requirements.txt`. Install them using:
+
 ```bash
 pip install -r requirements.txt
-Data Requirements
-The system requires an input file named dialogs.csv with the following columns:
+```
 
-input: User messages
-output: Bot responses
-intent: Message intents
-Usage
-Data Analysis and Model Training
+## Data Requirements
+The system requires an input file named `dialogs.csv` with the following columns:
+- **input**: User messages
+- **output**: Bot responses
+- **intent**: Message intents
+
+## Usage
+
+### Data Analysis and Model Training
 Run the following command to start data analysis and model training:
 
-bash
-Copy code
+```bash
 python chatbot.py
+```
+
 The script will:
+- Perform EDA with visualizations
+- Preprocess text data
+- Train multiple models
+- Save the best performing model
+- Implement chatbot functionality
 
-Perform EDA with visualizations
-Preprocess text data
-Train multiple models
-Save the best performing model
-Implement chatbot functionality
-Model Training
+### Model Training
 The system trains and evaluates four different models:
+- **Support Vector Machine (SVM)** (with grid search)
+- **Random Forest**
+- **Gradient Boosting**
+- **Logistic Regression**
 
-Support Vector Machine (SVM) (with grid search)
-Random Forest
-Gradient Boosting
-Logistic Regression
 Each model is evaluated using the following metrics:
+- Accuracy
+- F1 Score
+- Precision
+- Recall
+- Confusion Matrix
 
-Accuracy
-F1 Score
-Precision
-Recall
-Confusion Matrix
-Output Files
-Trained model: best_logistic_regression_model.joblib
-Various visualization plots
-Performance metrics
-Future Work
-Implementation of a Flask web interface
-Model deployment
-Response generation improvements
-Additional NLP features
+## Output Files
+- Trained model: `best_logistic_regression_model.joblib`
+- Various visualization plots
+- Performance metrics
+
+## Future Work
+- Implementation of a Flask web interface
+- Model deployment
+- Response generation improvements
+- Additional NLP features
